@@ -15,11 +15,14 @@ To perform the touch screen calibration, load libTouchSCalibration.ino and open 
 3) the highest value of x by touching the lower/bottom corner of your tft, put the value in TOUCSRCAL_XHIGH
 4) in the same manner you get the max value of y, put that value in TOUCSRCAL_XHIGH
 */
-#define TOUCSRCAL_XLOW	0//62
-#define TOUCSRCAL_YLOW	0//153
-#define TOUCSRCAL_XHIGH	0//924
-#define TOUCSRCAL_YHIGH	0//917
+//#define TOUCSRCAL_XLOW	50  //50  //60//62
+//#define TOUCSRCAL_YLOW	110 //110 //105//153
+//#define TOUCSRCAL_XHIGH	950 //950 //890//924
+//#define TOUCSRCAL_YHIGH	940 //940 //894//917
 
-
+#define TOUCSRCAL_XLOW	60	//TFTM050-3
+#define TOUCSRCAL_YLOW	109	//TFTM050-3
+#define TOUCSRCAL_XHIGH	943	//TFTM050-3
+#define TOUCSRCAL_YHIGH	938	//TFTM050-3
 
 #endif
