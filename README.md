@@ -1,4 +1,15 @@
-RA8875 library b11p10 [Testing gold release]
+RA8875 library 0.80b1 [first beta]
+===========================================
+
+First attempt to include support also for ESP32.
+First tests worked fine, also resistive touch.
+
+Known issues are:
+- Capacitive touch not yet implemented (removed in the ESP32 version)
+- if Font-Rotation is used, text is somehow mirrored
+
+
+RA8875 library 0.80b1b11p10 [Testing gold release]
 ===========================================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
