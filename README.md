@@ -9,7 +9,7 @@ Known issues are:
 - if Font-Rotation is used, text is somehow mirrored
 
 
-RA8875 library 0.80b1b11p10 [Testing gold release]
+RA8875 library 0.7911p10 [Testing gold release]
 ===========================================
 
 **Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
