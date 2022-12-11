@@ -148,7 +148,11 @@ CS       10		53           YES       CS
 #ifndef _RA8875MC_H_
 #define _RA8875MC_H_
 
-#include "_includes/RA8875_CPU_commons.h"
+#include "includes/RA8875_CPU_commons.h"
+
+#if defined(ESP8266) || defined(ESP32)
+	#include <SPI.h>
+#endif
 
 
 #if !defined(swapvals)
@@ -189,10 +193,10 @@ CJK-Uni:	\u4E00 -> \u9FD5	/u4E ... /u9F
 */
 /* ----------------------------DO NOT TOUCH ANITHING FROM HERE ------------------------*/
 
-#include "_includes/font.h"
-#include "_includes/RA8875Registers.h"
-#include "_includes/RA8875ColorPresets.h"
-#include "_settings/RA8875UserSettings.h"
+#include "includes/font.h"
+#include "includes/RA8875Registers.h"
+#include "includes/RA8875ColorPresets.h"
+#include "includes/RA8875UserSettings.h"
 
 #if defined(_FORCE_PROGMEM__) && !defined(ESP8266) && !defined(ESP32)
 template <typename T> T PROGMEM_read (const T * sce)

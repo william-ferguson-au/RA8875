@@ -269,7 +269,7 @@ DO NOT Exceed 23Mhz for RA8875! It will result in garbage on screen or run very 
 			0x16,0x3C,0xE9,0x01,0x01,0xA0,0x0A,0x06,0x28
 		};
 	#elif !defined(USE_FT5206_TOUCH) && defined(USE_RA8875_TOUCH)
-		#include "_settings/RA8875Calibration.h"
+		#include "includes/RA8875Calibration.h"
 	#endif
 #endif
 

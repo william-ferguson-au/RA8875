@@ -1,4 +1,4 @@
-RA8875 library 0.80b1 [first beta]
+RA8875 library 0.80b2 [first beta]
 ===========================================
 
 First attempt to include support also for ESP32.
@@ -8,17 +8,18 @@ Known issues are:
 - Capacitive touch not yet implemented (removed in the ESP32 version)
 - if Font-Rotation is used, text is somehow mirrored
 
+**Sumotoy Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
 
-RA8875 library 0.7911p10 [Testing gold release]
-===========================================
+##### Current version 0.80b2
+**0.80b2** changes...<br>
+ - By william_ferguson_au
+ - Added ESP32 style CMake file. You should be able to just add this project as a git submodule to your ESP32 components folder to include it.
+ - Renamed "_settings" folder to "includes" and changed all code references to include files to "includes" folder
 
-**Wiki added!** https://github.com/sumotoy/RA8875/wiki<br>
-This is the last <b>'development'</b> version, last known <b>stable</b> version is here:<br>
-https://github.com/sumotoy/RA8875/tree/0.70<br>
-The development release normally contain bug fixes so it's almost safe to use but if you have problems you can switch back to the stable release (I try to keep as stable I can)<br>
-Moved a lot of 'bla bla' in the wiki, readme cleaned.
+**0.80b1** changes...<br>
+- By knopserl 
+- Made some ESP32 favourable changes.
 
-##### Current version 0.70b11, Please read!!!.<br>
 **0.70b11p1** changes...<br>
  - New optimized User Font Rendering engine, over 23 times faster.
  - Added template & stepByStep wiki for converting fonts with lcd-image-converter.

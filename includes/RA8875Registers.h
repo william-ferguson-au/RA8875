@@ -481,8 +481,8 @@ If pattern Format = 16x16 then Pattern Set [1:0] is valid */
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #if !defined(USE_EXTERNALTOUCH)
 #define RA8875_TPCR0                  0x70//Touch Panel Control Register 0
-	//#define RA8875_TPCR0_ENABLE           0x80
-	//#define RA8875_TPCR0_DISABLE          0x00
+	#define RA8875_TPCR0_ENABLE           0x80
+	#define RA8875_TPCR0_DISABLE          0x00
 	#define RA8875_TPCR0_WAIT_512CLK      0x00
 	#define RA8875_TPCR0_WAIT_1024CLK     0x10
 	#define RA8875_TPCR0_WAIT_2048CLK     0x20

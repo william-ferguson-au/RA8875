@@ -24,7 +24,7 @@ License:GNU General Public License v3.0
 #include "RA8875.h"
 
 #if defined(EEPROM_SUPPORTED)
-#include <EEPROM.h>
+#include <EEPROM.h> // The Arduino-esp32 EEPROM library has been deprecated. TODO Replace EEPROM usage with Preferences.
 #endif
 
 #if defined (USE_FT5206_TOUCH)
