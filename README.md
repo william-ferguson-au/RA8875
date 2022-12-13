@@ -1,8 +1,7 @@
 RA8875 library 0.80b2 [first beta]
 ===========================================
 
-First attempt to include support also for ESP32.
-First tests worked fine, also resistive touch.
+Includes support for ESP32 using ESP-IDFv4.4.
 
 Known issues are:
 - Capacitive touch not yet implemented (removed in the ESP32 version)
