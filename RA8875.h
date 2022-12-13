@@ -477,6 +477,8 @@ class RA8875 : public Print {
 	void 		enableISR(bool force = false); 
 	void 		setInternalInt(enum RA8875intlist b);//   BTE,TOUCH,DMA,KEY
 	void 		clearInternalInt(enum RA8875intlist b);// BTE,TOUCH,DMA,KEY
+//-------------- Text Helpers ---------------------------------------------------------------------
+    uint16_t    getTextWidth(const char* text);
 //-------------- TOUCH SCREEN ---------------------------------------------------------------------
 #if !defined(_AVOID_TOUCHSCREEN)
 	bool 		touched(bool safe);

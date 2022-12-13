@@ -1826,7 +1826,7 @@ uint8_t RA8875::getFontWidth(boolean inColums)
 
 /**************************************************************************/
 /*!		
-		return the current heigh of the font in pixel
+		return the current height of the font in pixel.
 		If font it's scaled, it will multiply.
 		It's a fast business since the register it's internally tracked
 		It can also return the usable rows based on the actual fontHeight
@@ -1872,6 +1872,17 @@ void RA8875::setFontSpacing(uint8_t spc)
 	}
 
 }
+
+/**
+ * Returns the width of the text in pixels using the currently selected font and font scale.
+ *
+ * @param text
+ * @return width of the text in pixels using the currently selected font and font scale.
+ */
+uint16_t RA8875::getTextWidth(const char* text) {
+    return _STRlen_helper(text, strlen(text)) * _scaleX;//this calculates the width of the entire text
+}
+
 /**************************************************************************/
 /*!	PRIVATE
 		draw a string
