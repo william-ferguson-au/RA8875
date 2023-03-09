@@ -180,6 +180,8 @@ enum RA8875btedatam{ 		CONT, RECT };
 enum RA8875btelayer{ 		SOURCE, DEST };
 enum RA8875intlist{ 		BTE=1,TOUCH=2, DMA=3,KEY=4 };
 
+typedef void (*ra8875_touch_callback_t)();
+
 /*
 -------------- UNICODE decode (2 byte char) ---------------------
 Latin:      \u0000 -> \u007F	/u00
@@ -487,8 +489,9 @@ class RA8875 : public Print {
 	uint8_t 	getTouchLimit(void);
 	#if defined(USE_RA8875_TOUCH)
 		//void		useINT(const uint8_t INTpin=2,const uint8_t INTnum=0);
-		//void 		enableISR(bool force = false); 
-		void 		touchBegin(void);	//prepare Touch Screen driver
+		//void 		enableISR(bool force = false);
+        void        set_touch_callback(ra8875_touch_callback_t);
+        void 		touchBegin(void);	//prepare Touch Screen driver
 		void		touchBegin(uint8_t intPin); // alternative prepare internal Touch Screen driver
 		void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)
 		void 		clearTouchInt(void);

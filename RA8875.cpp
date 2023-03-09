@@ -53,6 +53,7 @@ Bit:	Called by:		In use:
 7: 		-na-			 
 --------------------------------*/
 
+static ra8875_touch_callback_t _touch_callback = nullptr;
 
 /**************************************************************************/
 /*!
@@ -5009,6 +5010,16 @@ void RA8875::useINT(const uint8_t INTpin,const uint8_t INTnum)
 	#endif
 }
 
+/**
+ * Sets a callback to be invoked when a ouch event is received.
+ * The callback will be invoked from an ISR, so it needs to complete quickly.
+ *
+ * @param callback  Function to callback on a touch event.
+ */
+void RA8875::set_touch_callback(ra8875_touch_callback_t callback) {
+    _touch_callback = callback;
+}
+
 /**************************************************************************/
 /*!
 		the generic ISR routine, will set to 1 bit 0 of _RA8875_INTS
@@ -5018,6 +5029,9 @@ void RA8875::useINT(const uint8_t INTpin,const uint8_t INTnum)
 void RA8875::_isr(void)
 {
 	_RA8875_INTS |= (1 << 0);//set
+    if (_touch_callback != nullptr) {
+        _touch_callback();
+    }
 }
 
 /**************************************************************************/
