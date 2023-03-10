@@ -488,6 +488,7 @@ class RA8875 : public Print {
 	#if defined(USE_RA8875_TOUCH)
 		//void		useINT(const uint8_t INTpin=2,const uint8_t INTnum=0);
 		//void 		enableISR(bool force = false); 
+        void        touchBegin_wylas(void);
 		void 		touchBegin(void);	//prepare Touch Screen driver
 		void		touchBegin(uint8_t intPin); // alternative prepare internal Touch Screen driver
 		void    	touchEnable(boolean enabled);//enable/disable Touch Polling (disable INT)

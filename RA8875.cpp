@@ -5085,7 +5085,7 @@ bool RA8875::_checkInterrupt(uint8_t _bit,bool _clear)
 {
 	if (_bit > 4) _bit = 4;
 	uint8_t temp = _readRegister(RA8875_INTC2);
-	if (bitRead(temp,_bit) == 1){
+	if (bitRead(temp,_bit) == 1){ // NB This looks wrong. If bitX==1 and we want to clear it then we set bitX=1. Docs say clearing is when you set to 1 so, presumably 0 means set.
 		if (_clear){
 			temp |= (1 << _bit);//bitSet(temp,_bit);
 			//if (bitRead(temp,0)) bitSet(temp,0);//Mmmmm...
@@ -5184,9 +5184,9 @@ void RA8875::_disableCapISR(void)
 
 /**************************************************************************/
 /*!
-      Checks if a touch event has occured
+      Checks if a touch event has occurred
 
-      @return  True is a touch event has occured (reading it via
+      @return  True is a touch event has occurred (reading it via
                touchRead() will clear the interrupt in memory)
 */
 /**************************************************************************/
@@ -5429,6 +5429,20 @@ uint8_t RA8875::getGesture(void)
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
 
+/**
+ * Using details from page 158 of the RA8875 manual version 1.9
+ */
+void RA8875::touchBegin_wylas(void)
+{
+    _writeRegister(RA8875_TPCR0, RA8875_TPCR0_ENABLE); // aka TP_ENABLE);
+    _writeRegister(RA8875_TPCR1, RA8875_TPCR1_AUTO | RA8875_TPCR1_DEBOUNCE);
+
+    /* Enable TP INT */
+    _writeRegister(RA8875_INTC1, RA8875_INTCx_TP);
+
+    _touchEnabled = true;
+}
+
 
 /**************************************************************************/
 /*!   
@@ -5670,7 +5684,8 @@ void RA8875::touchReadPixel(uint16_t *x, uint16_t *y)
 	*x = constrain(map(tx,_tsAdcMinX,_tsAdcMaxX,0,_width-1),0,_width-1);
 	//*y = map(ty,_tsAdcMinY,_tsAdcMaxY,0,_height-1);
 	*y = constrain(map(ty,_tsAdcMinY,_tsAdcMaxY,0,_height-1),0,_height-1);
-	_checkInterrupt(2);
+
+    _writeRegister(RA8875_INTC2, RA8875_INTCx_TP); //clear int
 }
 
 boolean RA8875::touchCalibrated(void) 
