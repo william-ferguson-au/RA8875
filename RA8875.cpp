@@ -39,6 +39,8 @@ License:GNU General Public License v3.0
 	static volatile bool _FT5206_INT = false;
 #endif
 
+#define TAG "RA8875"
+
 static volatile uint8_t _RA8875_INTS = 0b00000000;//container for INT states
 /*------------------------------
 Bit:	Called by:		In use:
@@ -3345,73 +3347,16 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
     writeCommand(RA8875_MRWC);
     _startSend();
 	//set data
-	#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
-		_spiwrite(RA8875_DATAWRITE);
-	#else
-		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
-			if (_altSPI){
-				SPI1.transfer(RA8875_DATAWRITE);
-			} else {
-				SPI.transfer(RA8875_DATAWRITE);
-			}
-		#else
-			SPI.transfer(RA8875_DATAWRITE);
-		#endif
-	#endif
+    SPI.transfer(RA8875_DATAWRITE);
+
+    // TODO It is drawing the line of pixel right to left (as seen from the default landscape orientation of the screen, ie top to bottom as seen from our portait view)
+    //  This shows as a single pixel at the x co-ord but possibly drawing the line down the page instead of across.
+    //  I think I need to change the scanning direction
+
 	//the loop
-	for (i=0;i<count;i++){
-		if (_color_bpp < 16) {
-			temp = _color16To8bpp(p[i]);//TOTEST:layer bug workaround for 8bit color!
-		} else {
-			temp = p[i];
-		}
-	#if !defined(ENERGIA) && !defined(___DUESTUFF) && ((ARDUINO >= 160) || (TEENSYDUINO > 121))
-		#if defined(SPI_HAS_TRANSACTION) && defined(__MKL26Z64__)	
-			if (_color_bpp > 8){
-				if (_altSPI){
-					SPI1.transfer16(temp);
-				} else {
-					SPI.transfer16(temp);
-				}
-			} else {//TOTEST:layer bug workaround for 8bit color!
-				if (_altSPI){
-					SPI1.transfer(temp);
-				} else {
-					SPI.transfer(temp & 0xFF);
-				}
-			}
-		#else
-			if (_color_bpp > 8){
-				SPI.transfer16(temp);
-			} else {//TOTEST:layer bug workaround for 8bit color!
-				SPI.transfer(temp & 0xFF);
-			}
-		#endif
-	#else
-		#if defined(___DUESTUFF) && defined(SPI_DUE_MODE_EXTENDED)
-			if (_color_bpp > 8){
-				SPI.transfer(_cs, temp >> 8, SPI_CONTINUE); 
-				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
-			} else {//TOTEST:layer bug workaround for 8bit color!
-				SPI.transfer(_cs, temp & 0xFF, SPI_LAST);
-			}
-		#else
-			#if (defined(__AVR__) && defined(_FASTSSPORT)) || defined(SPARK)
-				if (_color_bpp > 8){
-					_spiwrite16(temp);
-				} else {//TOTEST:layer bug workaround for 8bit color!
-					_spiwrite(temp >> 8);
-				}
-			#else
-				if (_color_bpp > 8){
-					SPI.transfer(temp >> 8);
-					SPI.transfer(temp & 0xFF);
-				} else {//TOTEST:layer bug workaround for 8bit color!
-					SPI.transfer(temp & 0xFF);
-				}
-			#endif
-		#endif
-	#endif
+	for (i = 0; i < count; i++){
+        temp = p[i];
+        SPI.transfer16(temp);
     }
     _endSend();
 }
