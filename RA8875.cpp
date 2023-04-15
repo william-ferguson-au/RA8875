@@ -939,9 +939,35 @@ void RA8875::_setTextMode(bool m)
 	if (m){//text
 		_MWCR0_Reg |= (1 << 7);
 		_textMode = true;
-	} else {//graph
-		_MWCR0_Reg &= ~(1 << 7);
-		_textMode = false;
+	} else {
+        // Switch to graphics mode
+        _MWCR0_Reg &= ~(1 << 7);
+        _textMode = false;
+
+        // Set the Memory Write Direction (bit2,3) of MWCR0_Reg
+        // ----- Bit 3,2 (Memory Write Direction (Only for Graphic Mode)
+        switch (_rotation) {
+            case 0: // default landscape
+                //00: Left -> Right then Top -> Down
+                _MWCR0_Reg &= ~(1 << 3);
+                _MWCR0_Reg &= ~(1 << 2);
+                break;
+            case 1: // 90 degrees (portrait)
+                // 10: Top -> Down then Left -> Right
+                _MWCR0_Reg |=  (1 << 3);
+                _MWCR0_Reg &= ~(1 << 2);
+                break;
+            case 2: // 180
+                //01: Right -> Left then Top -> Down
+                _MWCR0_Reg &= ~(1 << 3);
+                _MWCR0_Reg |=  (1 << 2);
+                break;
+            case 3: // 270
+                //11: Down -> Top then Left -> Right
+                _MWCR0_Reg |=  (1 << 3);
+                _MWCR0_Reg |=  (1 << 2);
+                break;
+        }
 	}
 	_writeData(_MWCR0_Reg);
 }
