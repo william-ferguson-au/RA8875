@@ -212,7 +212,7 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	_maxLayers = 2;
 	_currentLayer = 0;
 	_useMultiLayers = false;//starts with one layer only
-	_textMode = false;
+	_displayMode = NOT_CONFIGURED;
 	_brightness = 255;
 	_cursorX = 0; _cursorY = 0; _scrollXL = 0; _scrollXR = 0; _scrollYT = 0; _scrollYB = 0;
 	_scaleX = 1; _scaleY = 1;
@@ -310,8 +310,9 @@ void RA8875::begin(const enum RA8875sizes s,uint8_t colors)
 	3-2: 00(LR,TB), 01(RL,TB), 10(TB,LR), 11(BT,LR)
 	1: 0(Auto Increase in write), 1(no)
 	0: 0(Auto Increase in read), 1(no) */
-	_MWCR0_Reg = 0b00000000;
-	
+    _MWCR0_Reg_Text     = (1 << 7);
+    _MWCR0_Reg_Graphics = 0b00000000;
+
 /*	Font Control Register 0 [0x21]
 	7: 0(CGROM font is selected), 1(CGRAM font is selected)
 	6: na
@@ -648,7 +649,7 @@ void RA8875::_initialize()
 	fillWindow(_RA8875_DEFAULTBACKLIGHT);//set screen black
 	backlight(true);
 	setRotation(_RA8875_DEFAULTSCRROT);
-	_setTextMode(false);
+	_setTextMode(graphics_mode);
 	setActiveWindow();
 	#if defined(_RA8875_DEFAULTTXTBKGRND)
 		#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
@@ -931,45 +932,21 @@ uint16_t RA8875::height(bool absolute) const
 		[private]
 */
 /**************************************************************************/
-void RA8875::_setTextMode(bool m) 
+void RA8875::_setTextMode(display_mode_enum mode)
 {
-	if (m == _textMode) return;
+	if (mode == _displayMode) {
+        // Ignore if we are already in that mode.
+        return;
+    }
 	writeCommand(RA8875_MWCR0);
-	//if (m != 0){//text
-	if (m){//text
-		_MWCR0_Reg |= (1 << 7);
-		_textMode = true;
+	if (mode == text_mode) {
+        _writeData(_MWCR0_Reg_Text);
+	} else if (mode == graphics_mode) {
+        _writeData(_MWCR0_Reg_Graphics);
 	} else {
-        // Switch to graphics mode
-        _MWCR0_Reg &= ~(1 << 7);
-        _textMode = false;
-
-        // Set the Memory Write Direction (bit2,3) of MWCR0_Reg
-        // ----- Bit 3,2 (Memory Write Direction (Only for Graphic Mode)
-        switch (_rotation) {
-            case 0: // default landscape
-                //00: Left -> Right then Top -> Down
-                _MWCR0_Reg &= ~(1 << 3);
-                _MWCR0_Reg &= ~(1 << 2);
-                break;
-            case 1: // 90 degrees (portrait)
-                // 10: Top -> Down then Left -> Right
-                _MWCR0_Reg |=  (1 << 3);
-                _MWCR0_Reg &= ~(1 << 2);
-                break;
-            case 2: // 180
-                //01: Right -> Left then Top -> Down
-                _MWCR0_Reg &= ~(1 << 3);
-                _MWCR0_Reg |=  (1 << 2);
-                break;
-            case 3: // 270
-                //11: Down -> Top then Left -> Right
-                _MWCR0_Reg |=  (1 << 3);
-                _MWCR0_Reg |=  (1 << 2);
-                break;
-        }
-	}
-	_writeData(_MWCR0_Reg);
+        ESP_LOGW(TAG, "Unexpected display_Mode=%d", mode);
+    }
+    _displayMode = mode;
 }
 
 /**************************************************************************/
@@ -1061,7 +1038,38 @@ void RA8875::setRotation(uint8_t rotation)//0.69b32 - less code
 		_FNCR1_Reg &= ~(1 << 4);
 	}
 	_writeRegister(RA8875_FNCR1,_FNCR1_Reg);//0.69b21
-	setActiveWindow();
+
+    // If we change rotation then we need to reconfigure the MWCR0_Reg (Memory Write Direction)
+    // Set the Memory Write Direction (bit2,3) of MWCR0_Reg
+    // ----- Bit 3,2 (Memory Write Direction (Only for Graphic Mode)
+    switch (_rotation) {
+        case 0: // default landscape
+            //00: Left -> Right then Top -> Down
+            _MWCR0_Reg_Graphics &= ~(1 << 3);
+            _MWCR0_Reg_Graphics &= ~(1 << 2);
+            break;
+        case 1: // 90 degrees (portrait)
+            // 10: Top -> Down then Left -> Right
+            _MWCR0_Reg_Graphics |=  (1 << 3);
+            _MWCR0_Reg_Graphics &= ~(1 << 2);
+            break;
+        case 2: // 180
+            //01: Right -> Left then Top -> Down
+            _MWCR0_Reg_Graphics &= ~(1 << 3);
+            _MWCR0_Reg_Graphics |=  (1 << 2);
+            break;
+        case 3: // 270
+            //11: Down -> Top then Left -> Right
+            _MWCR0_Reg_Graphics |=  (1 << 3);
+            _MWCR0_Reg_Graphics |=  (1 << 2);
+            break;
+    }
+    if (_displayMode == graphics_mode) {
+        writeCommand(RA8875_MWCR0);
+        _writeData(_MWCR0_Reg_Graphics);
+    }
+
+    setActiveWindow();
 }
 
 /**************************************************************************/
@@ -1100,7 +1108,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 {
 	uint8_t tempMWCR1 = _readRegister(RA8875_MWCR1);//thanks MorganSandercock
 	uint8_t i;
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	_writeRegister(RA8875_CGSR,address);
 	writeTo(CGRAM);
 	writeCommand(RA8875_MRWC);
@@ -1121,7 +1129,7 @@ void RA8875::uploadUserChar(const uint8_t symbol[],uint8_t address)
 /**************************************************************************/
 void RA8875::showUserChar(uint8_t symbolAddrs,uint8_t wide) 
 {
-	if (!_textMode) _setTextMode(true);//we are in graph mode?
+    _setTextMode(text_mode);
 	uint8_t oldReg1State = _FNCR0_Reg;
 	uint8_t oldReg2State = 0;
 	uint8_t i;
@@ -1201,7 +1209,7 @@ void RA8875::setIntFontCoding(enum RA8875fontCoding f)
 /**************************************************************************/
 void RA8875::setExternalFontRom(enum RA8875extRomType ert, enum RA8875extRomCoding erc, enum RA8875extRomFamily erf)
 {
-	if (!_textMode) _setTextMode(true);
+    _setTextMode(text_mode);
 	_SFRSET_Reg = _readRegister(RA8875_FNCR0);;//just to preserve the reg in case something wrong
 	uint8_t temp = 0b00000000;
 	switch(ert){ //type of rom
@@ -1323,7 +1331,7 @@ void RA8875::setExtFontFamily(enum RA8875extRomFamily erf,boolean setReg)
 /**************************************************************************/
 void RA8875::setFont(enum RA8875fontSource s) 
 {
-	if (!_textMode) _setTextMode(true);//we are in graph mode?
+    _setTextMode(text_mode);
 	_TXTparameters &= ~(1 << 7);//render OFF
 	if (s == INTFONT){
 		_setFNTdimensions(0);
@@ -1626,9 +1634,15 @@ void RA8875::showCursor(enum RA8875tcursor c,bool blink)
     uint8_t cW = 0;
     uint8_t cH = 0;
 	_FNTcursorType = c;
-	c == NOCURSOR ? _MWCR0_Reg &= ~(1 << 6) : _MWCR0_Reg |= (1 << 6);
-    if (blink) _MWCR0_Reg |= 0x20;//blink or not?
-    _writeRegister(RA8875_MWCR0, _MWCR0_Reg);//set cursor
+	if (c == NOCURSOR) {
+        _MWCR0_Reg_Text &= ~(1 << 6);
+    } else {
+        _MWCR0_Reg_Text |= (1 << 6);
+    }
+    if (blink) {
+        _MWCR0_Reg_Text |= 0x20;//blink or not?
+    }
+    _writeRegister(RA8875_MWCR0, _MWCR0_Reg_Text);//set cursor
     //_writeRegister(RA8875_MWCR1, MWCR1Reg);//close graphic cursor(needed?)
     switch (c) {
         case IBEAM:
@@ -1781,10 +1795,14 @@ void RA8875::setFontScale(uint8_t xscale,uint8_t yscale)
 /**************************************************************************/
 void RA8875::cursorIncrement(bool on)
 {
-	if (bitRead(_TXTparameters,7) == 0){
-		on == true ? _MWCR0_Reg &= ~(1 << 1) : _MWCR0_Reg |= (1 << 1);
+	if (bitRead(_TXTparameters,7) == 0) {
+		if (on) {
+            _MWCR0_Reg_Text &= ~(1 << 1);
+        } else {
+            _MWCR0_Reg_Text |= (1 << 1);
+        }
 		bitWrite(_TXTparameters,1,on);
-		_writeRegister(RA8875_MWCR0,_MWCR0_Reg);
+		_writeRegister(RA8875_MWCR0,_MWCR0_Reg_Text);
 	}
 }
 
@@ -1978,14 +1996,17 @@ void RA8875::_textWrite(const char* buffer, uint16_t len)
 		}
 	}//_absoluteCenter,_relativeCenter,(renderOn && !_backTransparent)
 //-----------------------------------------------------------------------------------------------
-	if (!_textMode && !renderOn) _setTextMode(true);//   go to text
-	if (_textMode && renderOn)   _setTextMode(false);//  go to graphic
+	if (renderOn) {
+        _setTextMode(graphics_mode);
+    } else {
+        _setTextMode(text_mode);
+    };
 	//colored text vars
 	uint16_t grandientLen = 0;
 	uint16_t grandientIndex = 0;
 	uint16_t recoverColor = fcolor;
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
-		if (_textMode && _TXTrecoverColor){
+		if (_displayMode && _TXTrecoverColor){
 			if (_foreColor != _TXTForeColor) {_TXTrecoverColor = false;setForegroundColor(_TXTForeColor);}
 			if (_backColor != _TXTBackColor) {_TXTrecoverColor = false;setBackgroundColor(_TXTBackColor);}
 		} else {
@@ -2187,7 +2208,7 @@ void RA8875::_charWrite(const char c,uint8_t offset)
 		if (!dtacmd){
 			dtacmd = true;
 			
-			if (!_textMode) _setTextMode(true);//we are in graph mode?
+			_setTextMode(text_mode);
 			writeCommand(RA8875_MRWC);
 		}
 		_writeData(c);
@@ -2893,7 +2914,7 @@ void RA8875::DMA_enable(void)
 void RA8875::drawFlashImage(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t picnum)
 {  
 	if (_portrait){swapvals(x,y); swapvals(w,h);}//0.69b21 -have to check this, not verified
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	_writeRegister(RA8875_SFCLR,0x00);
 	_writeRegister(RA8875_SROC,0x87);
 	_writeRegister(RA8875_DMACR,0x02);
@@ -2966,7 +2987,7 @@ void  RA8875::BTE_move(int16_t SourceX, int16_t SourceY, int16_t Width, int16_t 
 	}
 
 	_waitBusy(0x40); //Check that another BTE operation is not still in progress
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	BTE_moveFrom(SourceX,SourceY);
 	BTE_size(Width,Height);
 	BTE_moveTo(DestX,DestY);
@@ -3233,8 +3254,8 @@ void RA8875::writePattern(int16_t x,int16_t y,const uint8_t *data,uint8_t size,b
 	if (setAW) getActiveWindow(a,b,c,d);
 	setActiveWindow(x,x+size-1,y,y+size-1);
 	setXY(x,y);
-	
-	if (_textMode) _setTextMode(false);//we are in text mode?
+
+    _setTextMode(graphics_mode);
 	writeCommand(RA8875_MRWC);
 	for (i=0;i<(size*size);i++) {
 		_writeData(data[i*2]);
@@ -3340,7 +3361,7 @@ void RA8875::writeTo(enum RA8875writes d)
 void RA8875::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
 	//setXY(x,y);
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	setXY(x,y);
 	writeCommand(RA8875_MRWC);
 	if (_color_bpp > 8){
@@ -3368,7 +3389,7 @@ void RA8875::drawPixels(uint16_t p[], uint16_t count, int16_t x, int16_t y)
     //setXY(x,y);
 	uint16_t temp = 0;
 	uint16_t i;
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	setXY(x,y);
     writeCommand(RA8875_MRWC);
     _startSend();
@@ -3400,7 +3421,7 @@ uint16_t RA8875::getPixel(int16_t x, int16_t y)
 {
     uint16_t color;
     setXY(x,y);
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
     writeCommand(RA8875_MRWC);
 	#if defined(_FASTCPU)
 		_slowDownSPI(true);
@@ -3511,7 +3532,7 @@ void RA8875::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 	}
 	//if ((x1 - x0 == 1) && (y1 - y0 == 1)) drawPixel(x0,y0,color);
 	if (_portrait) { swapvals(x0,y0); swapvals(x1,y1);}
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
@@ -4296,7 +4317,7 @@ void RA8875::_circle_helper(int16_t x0, int16_t y0, int16_t r, uint16_t color, b
 	}
 	if (r > RA8875_HEIGHT / 2) r = (RA8875_HEIGHT / 2) - 1;//this is the (undocumented) hardware limit of RA8875
 	
-	if (_textMode) _setTextMode(false);//we are in text mode?
+    _setTextMode(graphics_mode);
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
@@ -4362,7 +4383,7 @@ void RA8875::_rect_helper(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16
 	_checkLimits_helper(x1,y1);	// Truncate rectangle that is off screen, still draw remaining rectangle
 	_checkLimits_helper(x2,y2);
 
-	if (_textMode) _setTextMode(false);	//we are in text mode?
+	_setTextMode(graphics_mode);
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
@@ -4454,8 +4475,8 @@ void RA8875::_triangle_helper(int16_t x0, int16_t y0, int16_t x1, int16_t y1, in
 		}
 	}
 
-	if (_textMode) _setTextMode(false);//we are in text mode?
-	
+    _setTextMode(graphics_mode);
+
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
@@ -4502,9 +4523,9 @@ void RA8875::_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t long
 		return;
 	}
 	_checkLimits_helper(xCenter,yCenter);
-	
-	if (_textMode) _setTextMode(false);//we are in text mode?
-	
+
+    if (_displayMode == text_mode) _setTextMode(graphics_mode);
+
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif
@@ -4541,9 +4562,9 @@ void RA8875::_ellipseCurve_helper(int16_t xCenter, int16_t yCenter, int16_t long
 void RA8875::_roundRect_helper(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color, bool filled)
 {
 	if (_portrait) {swapvals(x,y); swapvals(w,h);}
-	
-	if (_textMode) _setTextMode(false);//we are in text mode?
-	
+
+    _setTextMode(graphics_mode);
+
 	#if defined(USE_RA8875_SEPARATE_TEXT_COLOR)
 		_TXTrecoverColor = true;
 	#endif

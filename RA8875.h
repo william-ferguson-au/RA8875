@@ -527,11 +527,18 @@ virtual size_t write(const uint8_t *buffer, size_t size) {
 	return size;
 }
 
+enum display_mode_enum {
+    NOT_CONFIGURED,
+    text_mode,
+    graphics_mode
+};
+
 using Print::write;
 
  protected:
-	volatile bool 				  _textMode;
-	volatile uint8_t 			  _MWCR0_Reg; //keep track of the register 		  [0x40]
+	volatile display_mode_enum    _displayMode;
+	volatile uint8_t 			  _MWCR0_Reg_Text;      //keep track of the register 		  [0x40]
+    volatile uint8_t 			  _MWCR0_Reg_Graphics;  //keep track of the register 		  [0x40]
 	int16_t 		 			   RA8875_WIDTH, 	   RA8875_HEIGHT;//absolute
 	int16_t 		 			  _width, 			  _height;
 	int16_t						  _cursorX, 		  _cursorY;
@@ -713,7 +720,7 @@ using Print::write;
 	//--------------------------------------------------------------------
 	void 		PWMsetup(uint8_t pw,boolean on, uint8_t clock);
 	void 		_updateActiveWindow(bool full);
-	void 		_setTextMode(bool m);
+	void 		_setTextMode(display_mode_enum mode);
 	void 		_scanDirection(boolean invertH,boolean invertV);
 	// 		helpers-----------------------------
 	
