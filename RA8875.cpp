@@ -4879,7 +4879,7 @@ void RA8875::GPIOX(boolean on)
 
 /**************************************************************************/
 /*!
-		PWM out
+		PWM out - This equates to screen brightness. But values over 162 seem to turn the screen off after 3 secs or so.
 		Parameters:
 		pw: pwm selection (1,2)
 		p: 0...255 rate
@@ -4888,6 +4888,7 @@ void RA8875::GPIOX(boolean on)
 /**************************************************************************/
 void RA8875::PWMout(uint8_t pw,uint8_t p)
 {
+    // NB This causes the screen to flash at startup. But if we don't call it then the display stays dark.
 	uint8_t reg;
 	pw > 1 ? reg = RA8875_P2DCR : reg = RA8875_P1DCR;
 	_writeRegister(reg, p);
